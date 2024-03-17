@@ -6,8 +6,9 @@
 """
 
 import torch
-from sklearn.metrics import accuracy_score, mean_squared_error, balanced_accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, mean_squared_error, balanced_accuracy_score, roc_auc_score, mean_absolute_error
 from tqdm import tqdm
+
 
 
 # Ignore statements for pylint:
@@ -16,6 +17,28 @@ from tqdm import tqdm
 #     Too many local variables (R0914), Missing docstring (C0116, C0115, C0114).
 # pylint: disable=R0912, R0915, E1101, E1102, C0103, W0702, R0914, C0116, C0115, C0114
 
+def return_all_targets_predictions(net, testloader, task, device):
+    net.eval()
+    targets_all = []
+    predictions_all = []
+
+    with torch.no_grad():
+        for batch_idx, (inputs_num, inputs_cat, targets) in enumerate(tqdm(testloader, leave=False)):
+            inputs_num, inputs_cat, targets = inputs_num.to(device).float(), inputs_cat.to(device), targets.to(device)
+            inputs_num, inputs_cat = inputs_num if inputs_num.nelement() != 0 else None, \
+                                     inputs_cat if inputs_cat.nelement() != 0 else None
+
+            outputs = net(inputs_num, inputs_cat)
+            if task == "multiclass":
+                predicted = torch.argmax(outputs, dim=1)
+            elif task == "binclass":
+                predicted = outputs
+            elif task == "regression":
+                predicted = outputs
+            targets_all.extend(targets.cpu().tolist())
+            predictions_all.extend(predicted.cpu().tolist())
+
+    return targets_all, predictions_all
 
 def evaluate_model(net, loaders, task, device):
     scores = []
@@ -27,8 +50,10 @@ def evaluate_model(net, loaders, task, device):
 
 def test_default(net, testloader, task, device):
     net.eval()
+    
     targets_all = []
     predictions_all = []
+
     with torch.no_grad():
         for batch_idx, (inputs_num, inputs_cat, targets) in enumerate(tqdm(testloader, leave=False)):
             inputs_num, inputs_cat, targets = inputs_num.to(device).float(), inputs_cat.to(device), targets.to(device)
@@ -55,8 +80,10 @@ def test_default(net, testloader, task, device):
                   "balanced_accuracy_adjusted": balanced_accuracy_adjusted}
     elif task == "regression":
         rmse = mean_squared_error(targets_all, predictions_all, squared=False)
+        mae = mean_absolute_error(targets_all, predictions_all)
         scores = {"score": -rmse,
-                  "rmse": -rmse}
+                  "rmse": -rmse,
+                  "mae": mae}
     elif task == "binclass":
         roc_auc = roc_auc_score(targets_all, predictions_all)
         scores = {"score": roc_auc,

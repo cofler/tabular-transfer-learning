@@ -1,0 +1,7 @@
+name: eubuccoNLD_direct
+source: local
+task: regression
+normalization: standard
+normalizer_path: 
+stage: 
+y_policy: 'mean_std'

@@ -95,7 +95,7 @@ def objective(trial, cfg: DictConfig, trial_configs, trial_stats):
     return stats['val_stats']['score']
 
 
-@hydra.main(config_path="config", config_name="optune_config")
+@hydra.main(config_path="config", config_name="optune_direct_config")
 def main(cfg):
     n_optuna_trials = 50
 

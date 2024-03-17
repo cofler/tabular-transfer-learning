@@ -66,7 +66,7 @@ def get_dataloaders(cfg, which_dataset=None):
         x_numerical, x_categorical, y, info, full_cat_data_for_encoder = get_data(dataset_id=cfg_dataset.name,
                                                                                   source=cfg_dataset.source,
                                                                                   task=cfg_dataset.task,
-                                                                                  datasplit=[.65, .15, .2])
+                                                                                  datasplit=[.65, .272, .028])
 
     dataset = TabularDataset(x_numerical, x_categorical, y, info, normalization=cfg_dataset.normalization,
                              cat_policy="indices",
@@ -85,6 +85,13 @@ def get_dataloaders(cfg, which_dataset=None):
     logging.info(f"Task: {cfg_dataset.task}, Dataset: {cfg_dataset.name}, n_numerical: {n_numerical}, "
                  f"n_categorical: {n_categorical}, n_classes: {n_classes}, n_train_samples: {dataset.size('train')}, "
                  f"n_val_samples: {dataset.size('val')}, n_test_samples: {dataset.size('test')}")
+
+    # kf = KFold(n_splits=5, shuffle=True)
+    # splits_indexes = enumerate(kf.split(X))
+
+
+    # # Loop through each fold
+    # for fold, (train_idx, test_idx) in enumerate(kf.split(train_dataset)):
 
     trainset = TensorDataset(X[0]["train"], X[1]["train"], Y["train"])
     valset = TensorDataset(X[0]["val"], X[1]["val"], Y["val"])

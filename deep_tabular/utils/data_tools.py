@@ -19,7 +19,7 @@ import pandas as pd
 import sklearn.preprocessing
 import torch
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 import pickle
 
 # Ignore statements for pylint:
@@ -65,6 +65,8 @@ def get_data_locally(ds_id):
 
     X_full = pd.concat([X_full_num, X_full_cat], axis = 1)
     y_full = pd.read_csv(f'../../../data/{ds_id}/y.csv')
+    print(y_full)
+    # print(len(y_full))
 
     if y_full.shape[1] == 1:
         y_full = y_full.iloc[:, 0]
@@ -107,11 +109,20 @@ def get_data(dataset_id, source, task, datasplit=[.65, .15, .2]):
     train_size, test_size, valid_size = datasplit[0], datasplit[2], datasplit[1]/(1-datasplit[2])
     if task != 'regression':
         data_train, data_test, targets_train, targets_test = train_test_split(data, targets, test_size=test_size, random_state=seed, stratify = targets)
-        data_train, data_val, targets_train, targets_val = train_test_split(data_train, targets_train, test_size=valid_size, random_state=seed, stratify = targets_train)
+        # data_train, data_val, targets_train, targets_val = train_test_split(data_train, targets_train, test_size=valid_size, random_state=seed, stratify = targets_train)
     else:
-        data_train, data_test, targets_train, targets_test = train_test_split(data, targets, test_size=test_size, random_state=seed)
-        data_train, data_val, targets_train, targets_val = train_test_split(data_train, targets_train, test_size=valid_size, random_state=seed)
+        # data_train, data_test, targets_train, targets_test = train_test_split(data, targets, test_size=test_size, random_state=seed)
+        data_train, data_test, targets_train, targets_test = train_test_split(data, targets, test_size=test_size, shuffle = False, stratify = None)
+        # data_train, data_val, targets_train, targets_val = train_test_split(data_train, targets_train, test_size=valid_size, random_state=seed)
 
+    index = [0,0]
+    kf = KFold(n_splits=5)
+    for i, (train_index, test_index) in enumerate(kf.split(data_train)):
+        if i == 3:
+            index[0] = train_index
+            index[1] = test_index
+
+    data_train, data_val, targets_train, targets_val = np.take(data_train, index[0], 0), np.take(data_train, index[1], 0), np.take(targets_train, index[0], 0 ), np.take(targets_train, index[1], 0)
 
 
     data_cat_train = data_train[categorical_columns].values
@@ -288,7 +299,7 @@ class TabularDataset:
         assert x is not None
         return len(x[part])
 
-    def normalize(self, x_num, noise=1e-3):
+    def normalize(self, x_num, noise=False):
         x_num_train = x_num['train'].copy()
         if self.normalization == 'standard':
             normalizer = sklearn.preprocessing.StandardScaler()
@@ -320,6 +331,10 @@ class TabularDataset:
     def handle_missing_values_numerical_features(self, x_num):
         # TODO: handle num_nan_masks for SAINT
         # num_nan_masks_int = {k: (~np.isnan(v)).astype(int) for k, v in x_num.items()}
+        for k, v in x_num.items():
+            print(k, " ", v)
+            print(np.isnan(v))
+
         num_nan_masks = {k: np.isnan(v) for k, v in x_num.items()}
         if any(x.any() for x in num_nan_masks.values()):
 
@@ -331,7 +346,7 @@ class TabularDataset:
         return x_num
 
     def encode_categorical_features(self, x_cat):
-        encoder = sklearn.preprocessing.OrdinalEncoder(handle_unknown='error', dtype='int64')
+        encoder = sklearn.preprocessing.OrdinalEncoder(handle_unknown='error', dtype='float64')
         encoder.fit(self.full_cat_data_for_encoder.values)
         x_cat = {k: encoder.transform(v) for k, v in x_cat.items()}
         return x_cat

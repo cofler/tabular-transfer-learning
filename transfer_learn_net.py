@@ -30,6 +30,7 @@ import deep_tabular as dt
 @hydra.main(config_path="config", config_name="transfer_learn_net_config")
 def main(cfg: DictConfig):
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(device)
     torch.backends.cudnn.benchmark = True
     log = logging.getLogger()
     log.info("\n_________________________________________________\n")
@@ -94,9 +95,12 @@ def main(cfg: DictConfig):
                                                                    [loaders["test"], loaders["val"], loaders["train"]],
                                                                    cfg.dataset.task,
                                                                    device)
+
             log.info(f"Training accuracy: {json.dumps(train_stats, indent=4)}")
             log.info(f"Val accuracy: {json.dumps(val_stats, indent=4)}")
             log.info(f"Test accuracy: {json.dumps(test_stats, indent=4)}")
+
+
 
             dt.utils.write_to_tb([train_stats["score"], val_stats["score"], test_stats["score"]],
                                  [f"train_acc-{cfg.dataset.name}",
@@ -110,6 +114,13 @@ def main(cfg: DictConfig):
                                                       [loaders["val"], loaders["test"]],
                                                       cfg.dataset.task,
                                                       device)
+            
+            targets, predictions = dt.return_all_targets_predictions(net, loaders["test"],
+                                                      cfg.dataset.task,
+                                                      device)
+            np.savetxt(f"targets_{epoch}.csv", targets, delimiter=",")
+            np.savetxt(f"predictions_{epoch}.csv", predictions, delimiter=",")
+
             if val_stats["score"] > highest_val_acc_so_far:
                 best_epoch = epoch
                 highest_val_acc_so_far = val_stats["score"]
@@ -119,7 +130,7 @@ def main(cfg: DictConfig):
                 out_str = "model_best.pth"
                 log.info(f"Saving model to: {out_str}")
                 torch.save(state, out_str)
-
+            log.info(f"Curr val score: {val_stats['score']}")
             if epoch - best_epoch > cfg.hyp.patience:
                 done = True
         epoch += 1

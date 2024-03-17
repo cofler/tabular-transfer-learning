@@ -1,6 +1,6 @@
 defaults:
   - model: ft_transformer_pretrain
-  - dataset: yeast_upstream
+  - dataset: eubuccoESP_downstream
   - hyp: hyp_for_transfer
   - override hydra/job_logging: custom
   - _self_

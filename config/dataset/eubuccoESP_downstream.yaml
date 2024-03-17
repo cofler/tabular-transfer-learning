@@ -1,0 +1,7 @@
+name: eubuccoESP_downstream
+source: local
+task: regression
+normalization: standard
+normalizer_path: '../../../data/yeast_upstream/normalizer.pkl'
+stage: 'pretrain'
+y_policy: 'mean_std'

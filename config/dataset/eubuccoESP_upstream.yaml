@@ -1,0 +1,7 @@
+name: eubuccoESP_upstream
+source: local
+task: binclass
+normalization: standard
+normalizer_path: '../../../data/yeast_upstream/normalizer.pkl'
+stage: 'pretrain'
+y_policy: 
