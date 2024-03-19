@@ -118,7 +118,7 @@ def get_data(dataset_id, source, task, datasplit=[.65, .15, .2]):
     index = [0,0]
     kf = KFold(n_splits=5)
     for i, (train_index, test_index) in enumerate(kf.split(data_train)):
-        if i == 3:
+        if i == 1:
             index[0] = train_index
             index[1] = test_index
 
@@ -406,8 +406,10 @@ class TabularDataset:
                 info = None
             elif self.y_policy == 'mean_std':
                 mean, std = self.y['train'].mean(), self.y['train'].std()
-                y = {k: (v - mean) / std for k, v in y.items()}
+                y = {k: (v - mean)  for k, v in y.items()} # /std
                 info = {'policy': self.y_policy, 'mean': mean, 'std': std}
+                logging.info("Normalizing y")
+                logging.info(std)
             else:
                 raise ValueError('Unknown y policy')
         else:

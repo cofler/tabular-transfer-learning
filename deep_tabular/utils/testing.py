@@ -35,8 +35,11 @@ def return_all_targets_predictions(net, testloader, task, device):
                 predicted = outputs
             elif task == "regression":
                 predicted = outputs
-            targets_all.extend(targets.cpu().tolist())
-            predictions_all.extend(predicted.cpu().tolist())
+
+            
+
+            targets_all.extend(targets.detach().cpu().tolist())
+            predictions_all.extend(predicted.detach().cpu().tolist())
 
     return targets_all, predictions_all
 
